@@ -754,6 +754,20 @@ Rectangle {
                     }
                 }
 
+                // Tipografías: botón para activar en Windows al vuelo
+                Boton {
+                    visible: modelo.familiaFoco === Textos.TIPOGRAFIA && Boolean(inspector.ficha.ruta)
+                    width: parent.width
+                    altura: Math.round(tema.fuente * 2.2)
+                    icono: "fuente"
+                    texto: nucleo.estaFuenteActiva(inspector.ficha.ruta || "")
+                           ? qsTr("activa en el sistema")
+                           : qsTr("activar en Windows")
+                    activo: nucleo.estaFuenteActiva(inspector.ficha.ruta || "")
+                    pista: qsTr("disponible en Photoshop, Figma y Word sin instalar")
+                    onPulsado: nucleo.conmutarFuente(inspector.ficha.ruta || "")
+                }
+
                 // Lo demás, con su icono y en dos columnas, como los de
                 // arriba pero más bajos. Son las mismas acciones que el clic
                 // derecho (`ventana.accionesElemento()`), menos las que ya

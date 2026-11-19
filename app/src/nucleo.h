@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QHash>
 #include <QObject>
+#include <QSet>
 #include <QString>
 #include <QUrl>
 #include <QVariantList>
@@ -222,7 +223,14 @@ public:
     /// no contestar con un error después.
     Q_INVOKABLE bool cuelgaDe(const QString &hija, const QString &padre) const;
 
+    /// Activar / desactivar tipografía en el sistema operativo en caliente.
+    Q_INVOKABLE bool activarFuente(const QString &ruta);
+    Q_INVOKABLE bool desactivarFuente(const QString &ruta);
+    Q_INVOKABLE bool estaFuenteActiva(const QString &ruta) const;
+    Q_INVOKABLE bool conmutarFuente(const QString &ruta);
+
 signals:
+    void fuenteEstadoCambio(const QString &ruta, bool activa);
     void listo();
     void nombreCambio();
     void vistaNueva(int n);
@@ -281,4 +289,5 @@ private:
     QString m_deshacer;
     QString m_rehacer;
     QString m_ultimoAviso;
+    QSet<QString> m_fuentesActivas;
 };

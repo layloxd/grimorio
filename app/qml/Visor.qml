@@ -39,7 +39,8 @@ Item {
     readonly property bool esVideo: familiaFoco === Textos.VIDEO
     readonly property bool esDocumento: familiaFoco === Textos.DOCUMENTO
     readonly property bool esModelo: familiaFoco === Textos.MODELO
-    readonly property bool conVisorPropio: esDocumento || esModelo
+    readonly property bool esFuente: familiaFoco === Textos.TIPOGRAFIA
+    readonly property bool conVisorPropio: esDocumento || esModelo || esFuente
 
     /// La pila del elemento en foco, de la versión más pesada a la más ligera,
     /// con la principal marcada. Vacía si no es de ninguna. Sale de la ficha:
@@ -367,7 +368,9 @@ Item {
         anchors.fill: lienzo
         z: 1
         active: visor.visible && visor.conVisorPropio && visor.idFoco.length > 0
-        source: visor.esDocumento ? "qrc:/qml/VisorPdf.qml" : "qrc:/qml/VisorModelo.qml"
+        source: visor.esDocumento ? "qrc:/qml/VisorPdf.qml"
+              : visor.esFuente ? "qrc:/qml/VisorFuente.qml"
+              : "qrc:/qml/VisorModelo.qml"
         readonly property bool listo: status === Loader.Ready && active
         onLoaded: visor.darVisorPropio()
     }

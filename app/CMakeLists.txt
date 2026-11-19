@@ -173,6 +173,7 @@ qt_add_resources(grimorio "interfaz"
         qml/VisorSonido.qml
         qml/VisorPdf.qml
         qml/VisorModelo.qml
+        qml/VisorFuente.qml
         qml/Editor.qml
         qml/textos.js
         qml/consulta.js
@@ -261,7 +262,7 @@ if(WIN32)
         # native-static-libs`; bcrypt y advapi32 se añaden porque versiones
         # anteriores de Rust las pedían, y nombrarlas de más no cuesta nada.
         kernel32 ntdll userenv ws2_32 dbghelp shell32 legacy_stdio_definitions
-        bcrypt advapi32
+        bcrypt advapi32 gdi32 user32
     )
     # Sin consola: es una aplicación de ventana. Lo que escribe por la salida
     # de error se sigue viendo si se lanza desde una terminal redirigiendo

@@ -1,15 +1,28 @@
 #include "nucleo.h"
 
+#include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMetaObject>
 #include <algorithm>
 #include <functional>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 Nucleo::Nucleo(QObject *padre) : QObject(padre) { }
 
 Nucleo::~Nucleo()
 {
+#ifdef Q_OS_WIN
+    for (const QString &f : m_fuentesActivas) {
+        RemoveFontResourceExW(reinterpret_cast<LPCWSTR>(f.utf16()), FR_PRIVATE, nullptr);
+    }
+    if (!m_fuentesActivas.isEmpty()) {
+        PostMessageW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0);
+    }
+#endif
     // Parar antes de morir: el hilo trabajador tiene un puntero a este objeto y
     // `grim_parar` no vuelve hasta que ese hilo ha terminado.
     if (m_n) grim_parar(m_n);
@@ -728,4 +741,58 @@ void Nucleo::reordenar(const QString &id, const QString &carpeta, const QString 
     if (!antes.isEmpty()) o[QStringLiteral("antes")] = antes;
     if (!despues.isEmpty()) o[QStringLiteral("despues")] = despues;
     mandar(o);
+}
+
+bool Nucleo::activarFuente(const QString &ruta)
+{
+    if (ruta.isEmpty()) return false;
+    QString nativa = QDir::toNativeSeparators(ruta);
+#ifdef Q_OS_WIN
+    int res = AddFontResourceExW(reinterpret_cast<LPCWSTR>(nativa.utf16()), FR_PRIVATE, nullptr);
+    if (res > 0) {
+        m_fuentesActivas.insert(nativa);
+        PostMessageW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0);
+        emit fuenteEstadoCambio(ruta, true);
+        return true;
+    }
+    return false;
+#else
+    m_fuentesActivas.insert(nativa);
+    emit fuenteEstadoCambio(ruta, true);
+    return true;
+#endif
+}
+
+bool Nucleo::desactivarFuente(const QString &ruta)
+{
+    if (ruta.isEmpty()) return false;
+    QString nativa = QDir::toNativeSeparators(ruta);
+#ifdef Q_OS_WIN
+    BOOL res = RemoveFontResourceExW(reinterpret_cast<LPCWSTR>(nativa.utf16()), FR_PRIVATE, nullptr);
+    if (res) {
+        m_fuentesActivas.remove(nativa);
+        PostMessageW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0);
+        emit fuenteEstadoCambio(ruta, false);
+        return true;
+    }
+#endif
+    m_fuentesActivas.remove(nativa);
+    emit fuenteEstadoCambio(ruta, false);
+    return false;
+}
+
+bool Nucleo::estaFuenteActiva(const QString &ruta) const
+{
+    QString nativa = QDir::toNativeSeparators(ruta);
+    return m_fuentesActivas.contains(nativa);
+}
+
+bool Nucleo::conmutarFuente(const QString &ruta)
+{
+    if (estaFuenteActiva(ruta)) {
+        desactivarFuente(ruta);
+        return false;
+    } else {
+        return activarFuente(ruta);
+    }
 }

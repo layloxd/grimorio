@@ -45,8 +45,29 @@ Lista kontrolna funkcjonalności do ręcznego przetestowania w wolnej chwili prz
 
 ---
 
-## 2. 🔤 Zarządzanie Fontami (W trakcie realizacji)
-- [ ] *[Do uzupełnienia po zakończeniu implementacji fontów]*
+## 2. 🔤 Zarządzanie Fontami (Font Management)
+
+### 📌 Krok 0: Przygotowanie pliku fontu
+- [ ] Przygotuj dowolny plik fontu (np. `.ttf`, `.otf` lub `.woff` pobrany np. z Google Fonts).
+- [ ] Przeciągnij plik fontu do okna aplikacji Grimorio.
+
+### 🔍 Test 1: Wykrywanie i miniatura w siatce
+- [ ] Sprawdź, czy kafelek pliku w siatce ma odpowiednią odznakę (np. `TTF` / `OTF`).
+- [ ] Zaznacz font pojedynczym kliknięciem:
+  - Sprawdź, czy w prawym panelu (Inspektor) pojawił się przycisk **"activar en Windows"** z ikonką fontu.
+
+### 🖥️ Test 2: Dedykowany podgląd (Visor)
+- [ ] Naciśnij `Enter` (lub kliknij dwukrotnie), aby otworzyć font w pełnoekranowym podglądzie:
+  - [ ] **Tryb "Texto":** Wpisz własny tekst (np. *"Zażółć gęślą jaźń 123"*), zmień suwakiem rozmiar czcionki (px) i upewnij się, że tekst renderuje się płynnie w wektorowej jakości.
+  - [ ] **Tryb "Cascada":** Przełącz widok na kaskadę i zobacz podgląd tekstu w zróżnicowanych wielkościach (od 16px do 96px).
+  - [ ] **Tryb "Glifos":** Przełącz na glify i sprawdź siatkę znaków alfabetu, cyfr i symboli z kodami Unicode `U+XXXX`.
+
+### ⚡ Test 3: Aktywacja czcionki w locie w Windows (Eagle-killer)
+- [ ] W podglądzie fontu lub w Inspektorze kliknij **"Activar en Windows"**.
+- [ ] Przycisk powinien podświetlić się na aktywny (**"Activa en sistema"** z zielonym akcentem).
+- [ ] Otwórz dowolny zewnętrzny program (np. Notatnik / MS Word / Photoshop / Illustrator / Figma).
+- [ ] Rozwiń listę czcionek w tym programie — powinieneś zobaczyć nowo aktywowaną czcionkę i móc nią pisać!
+- [ ] Wróć do Grimorio i kliknij przycisk ponownie, aby ją dezaktywować. Czcionka zostaje bezpiecznie usunięta z sesji Windows bez restartowania systemu i bez instalowania śmieci w `C:\Windows\Fonts`.
 
 ---
 
