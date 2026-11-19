@@ -1,9 +1,11 @@
 #include "nucleo.h"
 
 #include <QDir>
+#include <QFileDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMetaObject>
+#include <QTextStream>
 #include <algorithm>
 #include <functional>
 
@@ -808,4 +810,43 @@ QString Nucleo::leerTexto(const QString &rutaOUrl, int maxBytes)
     if (!f.open(QIODevice::ReadOnly)) return QString();
     const QByteArray bytes = f.read(maxBytes);
     return QString::fromUtf8(bytes);
+}
+
+bool Nucleo::guardarTexto(const QString &rutaOUrl, const QString &contenido)
+{
+    QString ruta = rutaOUrl;
+    if (ruta.startsWith(QLatin1String("file:///"))) {
+        ruta = QUrl(rutaOUrl).toLocalFile();
+    }
+    if (ruta.isEmpty()) return false;
+    QFile f(ruta);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        return false;
+    }
+    QTextStream out(&f);
+    out << contenido;
+    return true;
+}
+
+QString Nucleo::elegirRutaGuardar(const QString &titulo, const QString &filtro, const QString &defecto)
+{
+#ifdef Q_OS_WIN
+    return QFileDialog::getSaveFileName(nullptr, titulo, defecto, filtro);
+#else
+    Q_UNUSED(titulo)
+    Q_UNUSED(filtro)
+    Q_UNUSED(defecto)
+    return QString();
+#endif
+}
+
+QString Nucleo::elegirRutaAbrir(const QString &titulo, const QString &filtro)
+{
+#ifdef Q_OS_WIN
+    return QFileDialog::getOpenFileName(nullptr, titulo, QString(), filtro);
+#else
+    Q_UNUSED(titulo)
+    Q_UNUSED(filtro)
+    return QString();
+#endif
 }

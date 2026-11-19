@@ -185,6 +185,9 @@ qt_add_resources(grimorio "interfaz"
         qml/PanelNovedades.qml
         qml/Pista.qml
         qml/EjesVista.qml
+        qml/ElementoTablero.qml
+        qml/BarraTablero.qml
+        qml/Tablero.qml
 )
 
 # Los temas que vienen dentro, para elegirlos en los ajustes sin saber dónde

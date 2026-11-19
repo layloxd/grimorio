@@ -357,6 +357,7 @@ Window {
         // son estrechos; el menú enseña `texto`.
         let a = [
             { texto: qsTr("ver"), valor: "ver", icono: "ojo", atajo: qsTr("Intro") },
+            { texto: qsTr("abrir en el tablero (canvas)"), valor: "tablero", icono: "tablero", atajo: "F3" },
             { texto: qsTr("abrir fuera"), valor: "fuera", icono: "externo" },
             { texto: qsTr("copiar"), valor: "copiar", icono: "copiar", atajo: "Ctrl+C" },
             { texto: qsTr("exportar…"), valor: "exportar", icono: "exportar", atajo: "Ctrl+E" },
@@ -411,6 +412,7 @@ Window {
         if (modelo.elegidos === 0) return
         switch (accion) {
         case "ver": if (modelo.actual >= 0) visorAbierto = true; break
+        case "tablero": abrirTableroConElegidos(); break
         case "fuera": nucleo.abrirFuera(modelo.seleccion[0]); break
         case "copiar": copiarElegidos(); break
         case "exportar": exportar.exportar(modelo.urlsElegidas()); break
@@ -1306,6 +1308,12 @@ Window {
         enabled: modelo.elegidos > 0 && !ventana.escribiendo
         onActivated: ventana.renombrar()
     }
+    // F3 abre el tablero infinito (PureRef Canvas)
+    Shortcut {
+        sequence: "F3"
+        enabled: !ventana.escribiendo
+        onActivated: ventana.abrirTablero()
+    }
     Shortcut {
         sequence: "Ctrl+E"
         enabled: modelo.elegidos > 0 && !ventana.escribiendo
@@ -1797,4 +1805,33 @@ Window {
         id: capaPistas
     }
     readonly property Item pistas: capaPistas
+
+    // Tablero infinito de referencias (PureRef Mode)
+    Tablero {
+        id: ventanaTablero
+    }
+
+    function abrirTablero() {
+        abrirTableroConElegidos()
+    }
+
+    function abrirTableroConElegidos() {
+        let lista = []
+        const elegidos = modelo.indicesElegidos()
+        for (let i = 0; i < elegidos.length; i++) {
+            const k = elegidos[i]
+            const u = modelo.urlDe(k)
+            lista.push({
+                id: modelo.idDe(k),
+                ruta: u ? u.toString() : "",
+                nombre: modelo.nombreDe(k)
+            })
+        }
+        if (lista.length > 0) {
+            ventanaTablero.agregarVarios(lista)
+        }
+        ventanaTablero.show()
+        ventanaTablero.raise()
+        ventanaTablero.requestActivate()
+    }
 }

@@ -232,6 +232,15 @@ public:
     /// Lee el contenido textual de un archivo (Markdown, TXT, LOG, JSON, etc.) hasta maxBytes.
     Q_INVOKABLE QString leerTexto(const QString &rutaOUrl, int maxBytes = 1000000);
 
+    /// Guarda contenido textual en un archivo. Devuelve true si se pudo escribir.
+    Q_INVOKABLE bool guardarTexto(const QString &rutaOUrl, const QString &contenido);
+
+    /// Diálogo nativo para elegir dónde guardar un archivo.
+    Q_INVOKABLE QString elegirRutaGuardar(const QString &titulo, const QString &filtro, const QString &defecto = QString());
+
+    /// Diálogo nativo para elegir un archivo a abrir.
+    Q_INVOKABLE QString elegirRutaAbrir(const QString &titulo, const QString &filtro);
+
 signals:
     void fuenteEstadoCambio(const QString &ruta, bool activa);
     void listo();

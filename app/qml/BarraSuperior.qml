@@ -331,6 +331,12 @@ Rectangle {
         }
         BotonIcono {
             anchors.verticalCenter: parent.verticalCenter
+            icono: "tablero"
+            pista: qsTr("abrir tablero de referencias / PureRef canvas (F3)")
+            onPulsado: ventana.abrirTablero()
+        }
+        BotonIcono {
+            anchors.verticalCenter: parent.verticalCenter
             icono: "video"
             activo: ajustes.videoAlPasar
             pista: ajustes.videoAlPasar ? qsTr("vídeo al pasar el ratón")
