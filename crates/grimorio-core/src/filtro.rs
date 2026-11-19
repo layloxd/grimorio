@@ -317,6 +317,9 @@ pub fn parsear(entrada: &str, base: Query) -> (Query, Vec<String>) {
                 Some(b) => q.repetidos = b,
                 None => mal(),
             },
+            "similar" | "similares" | "parecido" | "parecidos" => {
+                q.similar = Some(v.to_string());
+            },
             "papelera" | "trash" => match si_o_no(v) {
                 Some(b) => q.papelera = b,
                 None => mal(),

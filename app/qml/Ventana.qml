@@ -366,6 +366,10 @@ Window {
             { texto: varios ? qsTr("renombrar…") : qsTr("renombrar"),
               valor: "renombrar", icono: "lapiz", atajo: "F2" }
         ]
+        if (!varios && modelo.actual >= 0)
+            a.push({ texto: qsTr("buscar similares"), valor: "similares", icono: "similares" })
+        if (modelo.elegidos === 2)
+            a.push({ texto: qsTr("comparar lado a lado"), valor: "comparar", icono: "comparar" })
         if (carpetaActual.length > 0)
             a.push({ texto: qsTr("sacar de la carpeta"), valor: "sacar", icono: "salir" })
         // Las pilas. Apilar pide más de uno —el del foco es la principal—.
@@ -437,6 +441,15 @@ Window {
         case "girarDer": nucleo.girar(modelo.seleccion, (modelo.giroFoco + 90) % 360); break
         case "editor": visorAbierto = false; editor.abrir(modelo.actual); break
         case "fondo": quitarFondo(); break
+        case "similares": {
+            const id = modelo.idDe(modelo.actual)
+            if (id && id.length > 0) ponerFiltro("similar", id)
+            break
+        }
+        case "comparar": {
+            if (modelo.elegidos === 2) abrirComparador(modelo.seleccion[0], modelo.seleccion[1])
+            break
+        }
         }
     }
 
@@ -1835,5 +1848,27 @@ Window {
         ventanaTablero.show()
         ventanaTablero.raise()
         ventanaTablero.requestActivate()
+    }
+
+    // Comparador de duplicados y similares lado a lado
+    ComparadorDuplicados {
+        id: comparadorDuplicados
+    }
+
+    function abrirComparador(idA, idB) {
+        comparadorDuplicados.abrirConDos(idA, idB)
+    }
+
+    function abrirComparadorDuplicados() {
+        let listaPares = []
+        const total = modelo.cuenta
+        for (let i = 0; i + 1 < total; i += 2) {
+            listaPares.push([modelo.idDe(i), modelo.idDe(i + 1)])
+        }
+        if (listaPares.length > 0) {
+            comparadorDuplicados.abrirConPares(listaPares)
+        } else {
+            estado.avisar(qsTr("no hay pares de duplicados a la vista"))
+        }
     }
 }

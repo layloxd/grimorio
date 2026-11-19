@@ -133,6 +133,9 @@ pub struct Query {
     /// Solo lo que tiene repetido (exacto o casi), con cada grupo seguido.
     #[serde(default)]
     pub repetidos: bool,
+    /// Buscar por parecido visual a este elemento (por distancia perceptual de pHash).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub similar: Option<String>,
     /// Una pila entera: la principal con ese id y sus versiones. Es lo único
     /// que enseña las versiones; cualquier otra consulta las deja fuera y ve
     /// solo la principal.
@@ -176,6 +179,7 @@ impl Default for Query {
             desde_ms: None,
             hasta_ms: None,
             repetidos: false,
+            similar: None,
             pila: None,
             sort: SortBy::ImportedDesc,
             limit: 200,

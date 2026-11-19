@@ -603,6 +603,17 @@ Item {
             onPulsado: ventana.hacerConElemento("fondo")
         }
         Boton {
+            icono: "similares"
+            texto: qsTr("similares")
+            pista: qsTr("buscar imágenes parecidas en la biblioteca")
+            visible: visor.esImagen
+            onPulsado: {
+                const id = visor.version ? visor.version.id : visor.idFoco
+                visor.abierto = false
+                ventana.ponerFiltro("similar", id)
+            }
+        }
+        Boton {
             icono: "ojo"
             activo: visor.limpio
             pista: visor.limpio ? qsTr("volver a la interfaz (H)")

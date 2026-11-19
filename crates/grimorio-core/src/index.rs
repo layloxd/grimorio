@@ -971,6 +971,70 @@ impl Index {
         Ok(out)
     }
 
+    /// Busca elementos visualmente similares a `target_str` (id o id,max_dist)
+    /// calculando la distancia Hamming sobre su huella perceptual (pHash).
+    fn buscar_similares(&self, q: &Query, target_str: &str) -> Result<Vec<QueryHit>> {
+        let (target_id, max_dist) = match target_str.split_once(',') {
+            Some((id, dist_str)) => (id.trim(), dist_str.trim().parse::<u32>().unwrap_or(16)),
+            None => (target_str.trim(), 16),
+        };
+
+        let target_phash: Option<i64> = self
+            .conn
+            .query_row(
+                "SELECT phash FROM items WHERE id = ?1",
+                rusqlite::params![target_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+
+        let Some(target_phash) = target_phash else {
+            return Ok(Vec::new());
+        };
+        let target_u64 = target_phash as u64;
+
+        let mut resto = q.clone();
+        resto.similar = None;
+        resto.limit = 0;
+        resto.offset = 0;
+        let candidates = self.search(&resto)?;
+
+        let mut phash_map: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+        {
+            let mut st = self.conn.prepare_cached(
+                "SELECT id, phash FROM items WHERE trashed = 0 AND phash IS NOT NULL",
+            )?;
+            let rows = st.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)? as u64)))?;
+            for r in rows {
+                let (id, h) = r?;
+                phash_map.insert(id, h);
+            }
+        }
+
+        let mut con_distancia: Vec<(u32, QueryHit)> = Vec::new();
+        for hit in candidates {
+            if hit.id == target_id {
+                continue;
+            }
+            if let Some(&h) = phash_map.get(&hit.id) {
+                let dist = (h ^ target_u64).count_ones();
+                if dist <= max_dist {
+                    con_distancia.push((dist, hit));
+                }
+            }
+        }
+
+        con_distancia.sort_by_key(|(d, _)| *d);
+
+        let mut out: Vec<QueryHit> = con_distancia.into_iter().map(|(_, hit)| hit).collect();
+        let desde = q.offset.min(out.len());
+        let mut out = out.split_off(desde);
+        if q.limit > 0 {
+            out.truncate(q.limit);
+        }
+        Ok(out)
+    }
+
     /// Las posiciones a mano puestas en un sitio ("" es Todo).
     pub fn posiciones(&self, ctx: &str) -> Result<std::collections::HashMap<String, f64>> {
         let mut st = self
@@ -988,7 +1052,7 @@ impl Index {
     /// Cuántos daría una consulta, sin traerlos. Para el número de cada
     /// carpeta inteligente, que se recalcula a menudo.
     pub fn contar(&self, q: &Query) -> Result<u64> {
-        if q.repetidos {
+        if q.repetidos || q.similar.is_some() {
             let mut q = q.clone();
             q.limit = 0;
             q.offset = 0;
@@ -1009,6 +1073,9 @@ impl Index {
     pub fn search(&self, q: &Query) -> Result<Vec<QueryHit>> {
         if q.repetidos {
             return self.buscar_repetidos(q);
+        }
+        if let Some(ref target) = q.similar {
+            return self.buscar_similares(q, target);
         }
         let hay_pilas = self.hay_pilas()?;
         let (sql, args) = build_sql(q, hay_pilas);
@@ -2255,6 +2322,27 @@ mod tests_duplicados {
         let mut items = vec![item("a", "mismo", 1), item("b", "mismo", 1)];
         items[1].trashed = true;
         assert!(indice(&items).duplicados(3).unwrap().grupos.is_empty());
+    }
+
+    #[test]
+    fn buscar_similares_ordena_por_distancia_perceptual() {
+        let items = vec![
+            item("target", "h0", 0b0000_0000),
+            item("cercano", "h1", 0b0000_0001), // dist 1
+            item("medio", "h2", 0b0000_0011),   // dist 2
+            item("lejano", "h3", 0b0000_0111),  // dist 3
+            item("diferente", "h4", 0b1111_1111),// dist 8
+        ];
+        let idx = indice(&items);
+        let q = Query {
+            similar: Some("target,5".into()),
+            limit: 0,
+            ..Default::default()
+        };
+        let res = idx.search(&q).unwrap();
+        let ids: Vec<String> = res.into_iter().map(|h| h.id).collect();
+        assert_eq!(ids, vec!["cercano".to_string(), "medio".to_string(), "lejano".to_string()]);
+        assert_eq!(idx.contar(&q).unwrap(), 3);
     }
 }
 

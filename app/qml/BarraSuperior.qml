@@ -434,12 +434,18 @@ Rectangle {
                 campo: "repetidos"
                 interruptor: "si"
             }
-            // Mirando repetidos, la limpieza a un clic (solo copias exactas).
+            // Mirando repetidos, la limpieza a un clic (solo copias exactas) o comparador visual.
             Boton {
                 altura: Math.round(tema.fuente * 2)
                 visible: Consulta.leer(ventana.textoBusqueda, "repetidos") === "si"
                 texto: qsTr("quitar copias exactas")
                 onPulsado: nucleo.quitarCopiasExactas()
+            }
+            Boton {
+                altura: Math.round(tema.fuente * 2)
+                visible: Consulta.leer(ventana.textoBusqueda, "repetidos") === "si"
+                texto: qsTr("comparar lado a lado")
+                onPulsado: ventana.abrirComparadorDuplicados()
             }
         }
 

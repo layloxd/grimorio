@@ -40,6 +40,7 @@ var CAMPOS = {
     estrellas: ["estrellas", "stars"],
     orientacion: ["orientacion", "orientation", "orientación", "shape", "orient"],
     repetidos: ["repetidos", "duplicates", "repetido", "duplicados", "dupes"],
+    similar: ["similar", "similar", "similares", "parecido", "parecidos"],
     papelera: ["papelera", "trash"],
     etiquetado: ["etiquetado", "tagged", "etiquetada"],
     etiqueta: ["etiqueta", "tag", "etiquetas", "tags"],
