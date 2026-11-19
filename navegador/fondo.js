@@ -1,30 +1,30 @@
-// El fondo de la extensión: el menú del clic derecho y el puente con Grimorio.
-//
-// Con Grimorio se habla por «native messaging»: el navegador lanza `grim`, que
-// lleva el mensaje a la aplicación abierta (ver crates/grimorio-cli/src/
-// nativo.rs). Para eso `grim navegador instalar` tiene que haberse ejecutado
-// una vez; si no, el navegador dice que no conoce el programa y aquí se
-// traduce a algo que se pueda hacer.
+// El fondo de la extensiÃ³n: el menÃº del clic derecho, captura, colector y el puente con Grimorio.
 "use strict";
 
-importScripts("aviso.js");
+importScripts("aviso.js", "captura.js");
 
 const PROGRAMA = "com.grimorio.puerta";
-/// Por encima de esto no se mandan los bytes, se manda la dirección y la baja
-/// Grimorio: un mensaje al programa nativo no puede pasar de 64 MB, y en base64
-/// los bytes crecen un tercio.
 const TOPE_BYTES = 40 * 1024 * 1024;
 
-// Una sola entrada para todo: en una imagen o un vídeo guarda ese archivo; en
-// una página o un enlace, la imagen que los representa; en Instagram y en
-// TikTok, lo que hay bajo el ratón, que el navegador no ve porque está tapado
-// por capas.
+let colectorUltimasImagenes = [];
+
+// MenÃº contextual
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: "guardar",
       title: textoGrimorio("menuGuardar"),
-      contexts: ["image", "video", "link", "page"],
+      contexts: ["image", "video", "link"],
+    });
+    chrome.contextMenus.create({
+      id: "guardarPagina",
+      title: textoGrimorio("menuGuardarMarcador"),
+      contexts: ["page"],
+    });
+    chrome.contextMenus.create({
+      id: "abrirColectorMenu",
+      title: textoGrimorio("menuColector"),
+      contexts: ["page"],
     });
   });
 });
@@ -35,15 +35,13 @@ async function hablar(mensaje) {
   } catch (e) {
     const texto = String((e && e.message) || e);
     if (/not found|no se encontr/i.test(texto)) {
-      return { ok: false, sinConectar: true,
-               error: textoGrimorio("errorSinConectar") };
+      return { ok: false, sinConectar: true, error: textoGrimorio("errorSinConectar") };
     }
     return { ok: false, error: texto };
   }
 }
 
 function base64(bytes) {
-  // Por trozos: `String.fromCharCode(...todo)` revienta la pila con una foto.
   let s = "";
   const paso = 0x8000;
   for (let i = 0; i < bytes.length; i += paso) {
@@ -52,33 +50,30 @@ function base64(bytes) {
   return btoa(s);
 }
 
-/// Baja la imagen aquí, con la sesión de quien mira, y manda los bytes. Si no
-/// se puede —demasiado grande, o algo que no es una imagen—, manda la
-/// dirección y que la baje Grimorio.
-///
-/// Con `alternativas`, si la primera dirección no da el archivo se prueban
-/// las demás: TikTok da cada vídeo en varios servidores, y desde aquí unos
-/// contestan 403 y otros no.
-async function guardarUno({ url, alternativas, origen, nombre }, carpeta) {
+/// Guarda un elemento. Si ya vienen los datos en base64, los manda directamente.
+async function guardarUno({ url, alternativas, origen, nombre, datos, tipo }, carpeta) {
   const pedido = { accion: "traer", origen: origen || "", nombre: nombre || "", carpeta: carpeta || "" };
+
+  // Si ya tenemos los datos binarios en base64 (ej. capturas o Canvas)
+  if (datos) {
+    return hablar({ ...pedido, datos, tipo: tipo || "image/png" });
+  }
+
   let grande = null;
   for (const u of [url, ...(alternativas || [])]) {
     try {
       const r = await fetch(u, { credentials: "include" });
-      const tipo = (r.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      const t = (r.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
       const largo = Number(r.headers.get("content-length") || 0);
-      if (!r.ok || !/^(image|video)\//.test(tipo)) continue;
+      if (!r.ok || !/^(image|video)\//.test(t)) continue;
       if (largo <= TOPE_BYTES) {
         const bytes = new Uint8Array(await r.arrayBuffer());
         if (bytes.length <= TOPE_BYTES) {
-          return hablar({ ...pedido, datos: base64(bytes), tipo });
+          return hablar({ ...pedido, datos: base64(bytes), tipo: t });
         }
       }
-      // Demasiado grande para mandarla: esta es la dirección que funciona.
       grande = grande || u;
-    } catch (_) {
-      // Sin poder bajarla aquí, que lo intente Grimorio con la dirección.
-    }
+    } catch (_) {}
   }
   const direccion = grande || url;
   if (!/^https?:/.test(direccion)) return { ok: false, error: textoGrimorio("errorSinDireccion") };
@@ -90,10 +85,8 @@ async function carpetaElegida() {
   return carpeta || "";
 }
 
-/// Guarda cada uno y devuelve lo que pasó con cada uno: guardada, repetida
-/// (ya estaba), en camino (sigue bajando) o error. Lo apunta en las últimas.
-async function guardarLista(lista) {
-  const carpeta = await carpetaElegida();
+async function guardarLista(lista, carpetaEspecifica) {
+  const carpeta = carpetaEspecifica !== undefined ? carpetaEspecifica : await carpetaElegida();
   const resultados = [];
   for (const p of lista) {
     const r = (await guardarUno(p, carpeta)) || { ok: false, error: textoGrimorio("errorSinRespuesta") };
@@ -103,7 +96,6 @@ async function guardarLista(lista) {
   return { ok: resultados.some((r) => r.ok), resultados };
 }
 
-/// Las últimas guardadas, para la ventanita del botón.
 async function apuntar(resultados) {
   const { ultimas = [] } = await chrome.storage.local.get("ultimas");
   const nuevas = resultados.map((r) => ({
@@ -113,10 +105,9 @@ async function apuntar(resultados) {
     id: r.id || "",
     cuando: Date.now(),
   }));
-  await chrome.storage.local.set({ ultimas: [...nuevas.reverse(), ...ultimas].slice(0, 8) });
+  await chrome.storage.local.set({ ultimas: [...nuevas.reverse(), ...ultimas].slice(0, 10) });
 }
 
-/// El aviso dentro de una página que no es Instagram (allí lo pone su script).
 async function avisarEn(tab, aviso) {
   try {
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["aviso.js"] });
@@ -125,41 +116,39 @@ async function avisarEn(tab, aviso) {
       func: (a) => avisoGrimorio(a),
       args: [aviso],
     });
-  } catch (_) {
-    // Páginas en las que no se puede pintar (las del propio navegador): queda
-    // la marca del botón.
-  }
+  } catch (_) {}
 }
 
 async function marcar(tabId, bien) {
   await chrome.action.setBadgeBackgroundColor({ color: bien ? "#3b7d5a" : "#a33a3a", tabId });
-  await chrome.action.setBadgeText({ text: bien ? "✓" : "!", tabId });
+  await chrome.action.setBadgeText({ text: bien ? "âœ“" : "!", tabId });
   setTimeout(() => chrome.action.setBadgeText({ text: "", tabId }), 3000);
 }
 
-/// Las webs con script propio: el clic derecho lo atiende él, que sabe qué
-/// había bajo el ratón —Instagram y TikTok lo tapan con capas— o dónde está
-/// el original —4chan enseña una miniatura—.
 const RE_CON_BOTON = /^https:\/\/(www\.(instagram|tiktok)\.com|boards\.4chan(nel)?\.org)\//;
 
-/// Lo que hace la entrada del clic derecho. Aparte del oyente para poder
-/// llamarla en las pruebas sin abrir un menú de verdad.
 async function alPulsarMenu(info, tab) {
+  if (info.menuItemId === "abrirColectorMenu" && tab) {
+    return ejecutarColectorEnPestana(tab);
+  }
+
+  if (info.menuItemId === "guardarPagina" && tab) {
+    return ejecutarGuardarMarcador(tab);
+  }
+
   if (tab && RE_CON_BOTON.test(info.pageUrl || tab.url || "")) {
-    // Lo guarda la pestaña, que sabe qué había bajo el ratón y dónde está el
-    // original entero; el aviso sale allí, como con el botón.
     try {
       return await chrome.tabs.sendMessage(tab.id, { tipo: "guardarClicDerecho" }, { frameId: info.frameId || 0 });
     } catch (e) {
       return { ok: false, error: String(e.message || e) };
     }
   }
+
   if (tab) await avisarEn(tab, { estado: "en curso", titulo: textoGrimorio("avisoGuardando") });
   let r;
   if ((info.mediaType === "image" || info.mediaType === "video") && info.srcUrl) {
     r = await guardarLista([{ url: info.srcUrl, origen: info.pageUrl, nombre: tab && tab.title }]);
   } else {
-    // Un enlace o la página: Grimorio busca su imagen principal (og:image).
     const url = info.linkUrl || info.pageUrl;
     const uno = await hablar({ accion: "traer", url, origen: url, carpeta: await carpetaElegida() });
     const resultados = [{ ...uno, nombre: uno.nombre || (tab && tab.title) || "" }];
@@ -175,6 +164,53 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (r && tab) await marcar(tab.id, r.ok);
 });
 
+// LÃ³gica de acciones complejas
+async function ejecutarColectorEnPestana(tab) {
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["colector.js"] });
+    chrome.windows.create({
+      url: "colector-panel.html",
+      type: "popup",
+      width: 880,
+      height: 660,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e) };
+  }
+}
+
+async function ejecutarGuardarMarcador(tab) {
+  if (tab) await avisarEn(tab, { estado: "en curso", titulo: textoGrimorio("avisoGuardando") });
+  const capt = await capturarAreaVisible(tab);
+  if (!capt.ok) {
+    if (tab) await avisarEn(tab, { estado: "error", titulo: textoGrimorio("avisoNoGuardado"), detalle: capt.error });
+    return capt;
+  }
+  const r = await guardarLista([{
+    url: tab.url,
+    origen: tab.url,
+    nombre: tab.title || "Bookmark",
+    datos: capt.datos,
+    tipo: "image/png"
+  }]);
+  if (tab) await avisarEn(tab, avisoDeResultado(r, 1));
+  return r;
+}
+
+async function ejecutarCapturaCompleta(tab) {
+  if (tab) await avisarEn(tab, { estado: "en curso", titulo: textoGrimorio("avisoCapturandoPagina") });
+  const capt = await capturarPaginaCompleta(tab);
+  if (!capt.ok) {
+    if (tab) await avisarEn(tab, { estado: "error", titulo: textoGrimorio("avisoNoGuardado"), detalle: capt.error });
+    return capt;
+  }
+  const r = await guardarLista([capt]);
+  if (tab) await avisarEn(tab, avisoDeResultado(r, 1));
+  return r;
+}
+
+// Oyente de mensajes
 chrome.runtime.onMessage.addListener((m, de, responder) => {
   if (m.tipo === "mostrar") {
     hablar({ accion: "mostrar", id: m.id }).then(responder);
@@ -184,9 +220,71 @@ chrome.runtime.onMessage.addListener((m, de, responder) => {
     guardarLista(m.lista).then(responder);
     return true;
   }
+  if (m.tipo === "guardarLoteConCarpeta") {
+    guardarLista(m.lista, m.carpeta).then(responder);
+    return true;
+  }
+  if (m.tipo === "colectorResultados") {
+    colectorUltimasImagenes = m.imagenes || [];
+    responder({ ok: true });
+    return true;
+  }
+  if (m.tipo === "obtenerResultadosColector") {
+    responder({ ok: true, imagenes: colectorUltimasImagenes });
+    return true;
+  }
+  if (m.tipo === "abrirColector") {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        const r = await ejecutarColectorEnPestana(tab);
+        responder(r);
+      } else {
+        responder({ ok: false, error: "No active tab" });
+      }
+    })();
+    return true;
+  }
+  if (m.tipo === "capturarPagina") {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        const r = await ejecutarCapturaCompleta(tab);
+        responder(r);
+      } else {
+        responder({ ok: false, error: "No active tab" });
+      }
+    })();
+    return true;
+  }
+  if (m.tipo === "capturarVisible") {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        if (tab) await avisarEn(tab, { estado: "en curso", titulo: textoGrimorio("avisoGuardando") });
+        const capt = await capturarAreaVisible(tab);
+        const r = capt.ok ? await guardarLista([capt]) : capt;
+        if (tab) await avisarEn(tab, avisoDeResultado(r, 1));
+        responder(r);
+      } else {
+        responder({ ok: false, error: "No active tab" });
+      }
+    })();
+    return true;
+  }
+  if (m.tipo === "guardarMarcador") {
+    (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        const r = await ejecutarGuardarMarcador(tab);
+        responder(r);
+      } else {
+        responder({ ok: false, error: "No active tab" });
+      }
+    })();
+    return true;
+  }
   if (m.tipo === "cargadas" && de.tab) {
-    // Las imágenes que la página ha bajado, leídas en su propio mundo: el
-    // registro de la página no llega al mundo aislado de la extensión.
     chrome.scripting.executeScript({
       target: { tabId: de.tab.id, frameIds: [de.frameId || 0] },
       world: "MAIN",

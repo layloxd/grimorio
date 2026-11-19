@@ -1,15 +1,13 @@
-// La ventanita del botón de la extensión: si Grimorio está, y dónde guardar.
+// La ventanita del botÃ³n de la extensiÃ³n: si Grimorio estÃ¡, y dÃ³nde guardar.
 "use strict";
 
-/// Un texto en el idioma del navegador (_locales/).
 const t = (clave, ...huecos) => chrome.i18n.getMessage(clave, huecos.map(String)) || clave;
 
-// Los textos fijos de ventana.html, que en una página de la extensión no se
-// pueden poner con __MSG_…__.
 document.documentElement.lang = t("idioma");
-for (const el of document.querySelectorAll("[data-texto]")) el.textContent = t(el.dataset.texto);
+for (const el of document.querySelectorAll("[data-texto]")) {
+  el.textContent = t(el.dataset.texto);
+}
 
-/// Hace cuánto, en corto: «ahora», «5 min», «2 h», «3 d».
 function haceCuanto(ms) {
   const s = Math.max(0, (Date.now() - ms) / 1000);
   if (s < 60) return t("haceAhora");
@@ -18,22 +16,22 @@ function haceCuanto(ms) {
   return t("haceDias", Math.floor(s / 86400));
 }
 
-/// Lo último guardado: qué pasó con cada cosa, y pulsar lleva a Grimorio.
 async function pintarUltimas() {
   const { ultimas = [] } = await chrome.storage.local.get("ultimas");
   if (ultimas.length === 0) return;
   document.getElementById("ultimas").hidden = false;
   const lista = document.getElementById("lista");
-  const MARCA = { guardada: "✓", repetida: "●", error: "✕", "en camino": "◌" };
+  const MARCA = { guardada: "âœ“", repetida: "â— ", error: "âœ•", "en camino": "â—Œ" };
   const TEXTO = { guardada: t("ultimaGuardada"), repetida: t("ultimaRepetida"), error: t("ultimaError"),
                   "en camino": t("ultimaEnCamino") };
+  lista.innerHTML = "";
   for (const u of ultimas) {
     const fila = document.createElement("div");
     fila.className = "ultima " + (u.estado === "en camino" ? "camino" : u.estado);
     fila.title = u.estado === "error" ? u.error : TEXTO[u.estado] || "";
     const marca = document.createElement("span");
     marca.className = "marca";
-    marca.textContent = MARCA[u.estado] || "·";
+    marca.textContent = MARCA[u.estado] || "Â·";
     const nombre = document.createElement("span");
     nombre.className = "nombre";
     nombre.textContent = u.nombre || TEXTO[u.estado] || "";
@@ -51,6 +49,27 @@ async function pintarUltimas() {
     lista.append(fila);
   }
 }
+
+// Botones de acciÃ³n rÃ¡pida
+document.getElementById("btnColector").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ tipo: "abrirColector" });
+  window.close();
+});
+
+document.getElementById("btnCapturaPagina").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ tipo: "capturarPagina" });
+  window.close();
+});
+
+document.getElementById("btnCapturaVisible").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ tipo: "capturarVisible" });
+  window.close();
+});
+
+document.getElementById("btnMarcador").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ tipo: "guardarMarcador" });
+  window.close();
+});
 
 (async () => {
   pintarUltimas();

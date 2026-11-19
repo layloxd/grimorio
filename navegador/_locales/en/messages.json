@@ -328,5 +328,32 @@
   },
   "ultimaEnCamino": {
     "message": "on the way"
+  },
+  "arrastrarSoltar": {
+    "message": "Drop here to save to Grimorio"
+  },
+  "arrastrarSoltar2": {
+    "message": "Release to save"
+  },
+  "menuGuardarMarcador": {
+    "message": "Save page to Grimorio"
+  },
+  "menuColector": {
+    "message": "Sniff images on this page"
+  },
+  "btnSniffer": {
+    "message": "Sniff Images"
+  },
+  "btnFullCapture": {
+    "message": "Full Page"
+  },
+  "btnVisibleCapture": {
+    "message": "Screen Area"
+  },
+  "btnSaveBookmark": {
+    "message": "Save Page"
+  },
+  "avisoCapturandoPagina": {
+    "message": "Capturing full page..."
   }
 }

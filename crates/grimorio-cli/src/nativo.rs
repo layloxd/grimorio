@@ -232,22 +232,75 @@ fn manifiesto(firefox: bool) -> io::Result<Value> {
 /// Registra `grim` en los navegadores que haya. Devuelve en cuáles.
 pub fn instalar() -> io::Result<Vec<String>> {
     let mut hechos = Vec::new();
-    for (nombre, dir, firefox) in sitios() {
+    #[cfg(windows)]
+    {
+        let Some(appdata) = std::env::var_os("APPDATA").map(PathBuf::from) else {
+            return Ok(hechos);
+        };
+        let dir = appdata.join("Grimorio");
         std::fs::create_dir_all(&dir)?;
-        let texto = serde_json::to_string_pretty(&manifiesto(firefox)?)?;
-        std::fs::write(dir.join(format!("{NOMBRE}.json")), texto)?;
-        hechos.push(nombre.to_string());
+
+        let chrome_json_path = dir.join(format!("{NOMBRE}.json"));
+        let chrome_manifest = serde_json::to_string_pretty(&manifiesto(false)?)?;
+        std::fs::write(&chrome_json_path, chrome_manifest)?;
+        let chrome_path_str = chrome_json_path.to_string_lossy();
+
+        for (nombre, key_sub) in [
+            ("Chrome", r"Software\Google\Chrome\NativeMessagingHosts"),
+            ("Brave", r"Software\BraveSoftware\Brave-Browser\NativeMessagingHosts"),
+            ("Edge", r"Software\Microsoft\Edge\NativeMessagingHosts"),
+        ] {
+            let full_key = format!(r"HKCU\{key_sub}\{NOMBRE}");
+            let status = std::process::Command::new("reg")
+                .args(["add", &full_key, "/ve", "/t", "REG_SZ", "/d", &chrome_path_str, "/f"])
+                .status();
+            if let Ok(s) = status {
+                if s.success() {
+                    hechos.push(nombre.to_string());
+                }
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        for (nombre, dir, firefox) in sitios() {
+            std::fs::create_dir_all(&dir)?;
+            let texto = serde_json::to_string_pretty(&manifiesto(firefox)?)?;
+            std::fs::write(dir.join(format!("{NOMBRE}.json")), texto)?;
+            hechos.push(nombre.to_string());
+        }
     }
     Ok(hechos)
 }
 
 pub fn desinstalar() -> io::Result<Vec<String>> {
     let mut hechos = Vec::new();
-    for (nombre, dir, _) in sitios() {
-        let f = dir.join(format!("{NOMBRE}.json"));
-        if f.exists() {
-            std::fs::remove_file(f)?;
-            hechos.push(nombre.to_string());
+    #[cfg(windows)]
+    {
+        for (nombre, key_sub) in [
+            ("Chrome", r"Software\Google\Chrome\NativeMessagingHosts"),
+            ("Brave", r"Software\BraveSoftware\Brave-Browser\NativeMessagingHosts"),
+            ("Edge", r"Software\Microsoft\Edge\NativeMessagingHosts"),
+        ] {
+            let full_key = format!(r"HKCU\{key_sub}\{NOMBRE}");
+            let status = std::process::Command::new("reg")
+                .args(["delete", &full_key, "/f"])
+                .status();
+            if let Ok(s) = status {
+                if s.success() {
+                    hechos.push(nombre.to_string());
+                }
+            }
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        for (nombre, dir, _) in sitios() {
+            let f = dir.join(format!("{NOMBRE}.json"));
+            if f.exists() {
+                std::fs::remove_file(f)?;
+                hechos.push(nombre.to_string());
+            }
         }
     }
     Ok(hechos)
