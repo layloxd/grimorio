@@ -20,6 +20,11 @@ Window {
     property bool sinBordes: false
     property bool modoFantasma: false
     property real opacidadVentana: 1.0
+    property bool modoMano: false
+    property bool arrastrandoCamara: false
+
+    onActiveChanged: if (active) gestorTeclas.forceActiveFocus()
+    Component.onCompleted: gestorTeclas.forceActiveFocus()
 
     flags: Qt.Window
            | (siempreEncima ? Qt.WindowStaysOnTopHint : 0)
@@ -337,19 +342,46 @@ Window {
     }
 
     // ------------------------------------------------------- Lienzo Infinito
+    // Gestor de teclas para modo mano con la barra espaciadora
+    Item {
+        id: gestorTeclas
+        anchors.fill: parent
+        focus: true
+
+        Keys.onPressed: function(event) {
+            if (event.key === Qt.Key_Space && !event.isAutoRepeat) {
+                tablero.modoMano = true
+                event.accepted = true
+            }
+        }
+
+        Keys.onReleased: function(event) {
+            if (event.key === Qt.Key_Space && !event.isAutoRepeat) {
+                tablero.modoMano = false
+                if (!(zonaNavegacion.pressedButtons & (Qt.RightButton | Qt.MiddleButton))) {
+                    tablero.arrastrandoCamara = false
+                }
+                event.accepted = true
+            }
+        }
+    }
+
     MouseArea {
         id: zonaNavegacion
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         hoverEnabled: true
 
+        cursorShape: tablero.arrastrandoCamara ? Qt.ClosedHandCursor
+                     : (tablero.modoMano ? Qt.OpenHandCursor : Qt.ArrowCursor)
+
         property real ultimoX: 0
         property real ultimoY: 0
-        property bool arrastrandoCamara: false
 
         onPressed: function(mouse) {
-            if (mouse.button === Qt.RightButton || mouse.button === Qt.MiddleButton || (mouse.button === Qt.LeftButton && (mouse.modifiers & Qt.AltModifier))) {
-                arrastrandoCamara = true
+            gestorTeclas.forceActiveFocus()
+            if (mouse.button === Qt.RightButton || mouse.button === Qt.MiddleButton || (mouse.button === Qt.LeftButton && tablero.modoMano) || (mouse.button === Qt.LeftButton && (mouse.modifiers & Qt.AltModifier))) {
+                tablero.arrastrandoCamara = true
                 ultimoX = mouse.x
                 ultimoY = mouse.y
             } else if (mouse.button === Qt.LeftButton) {
@@ -359,7 +391,7 @@ Window {
         }
 
         onPositionChanged: function(mouse) {
-            if (arrastrandoCamara) {
+            if (tablero.arrastrandoCamara) {
                 const dx = mouse.x - ultimoX
                 const dy = mouse.y - ultimoY
                 tablero.mundoX += dx
@@ -370,7 +402,7 @@ Window {
         }
 
         onReleased: function(mouse) {
-            arrastrandoCamara = false
+            tablero.arrastrandoCamara = false
         }
 
         onWheel: function(wheel) {
