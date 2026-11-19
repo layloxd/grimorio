@@ -7,14 +7,25 @@ import QtQuick
 Item {
     id: elemento
     required property int index
-    required property var model
+    required property string idElemento
+    required property string ruta
+    required property string fuente
+    required property string nombre
+    required property real posX
+    required property real posY
+    required property real ancho
+    required property real alto
+    required property real escala
+    required property real giro
+    required property int orden
+    required property bool espejoH
 
-    x: model.posX
-    y: model.posY
-    width: Math.max(32, model.ancho * model.escala)
-    height: Math.max(32, model.alto * model.escala)
-    rotation: model.giro
-    z: model.orden
+    x: posX
+    y: posY
+    width: Math.max(32, ancho * escala)
+    height: Math.max(32, alto * escala)
+    rotation: giro
+    z: orden
 
     readonly property bool seleccionado: tablero.indiceSeleccionado === index
     property real arrastreInicioX: 0
@@ -28,25 +39,24 @@ Item {
         Image {
             id: imagen
             anchors.fill: parent
-            source: model.fuente
+            source: elemento.fuente
             fillMode: Image.PreserveAspectFit
-            mirror: model.espejoH
+            mirror: elemento.espejoH
             asynchronous: true
             smooth: true
             mipmap: true
 
             onStatusChanged: {
-                if (status === Image.Ready && (model.ancho <= 0 || model.alto <= 0)) {
+                if (status === Image.Ready && (elemento.ancho <= 0 || elemento.alto <= 0 || elemento.ancho === 400)) {
                     let w = implicitWidth > 0 ? implicitWidth : 400
                     let h = implicitHeight > 0 ? implicitHeight : 300
-                    // Limitar tamaño por defecto si es una imagen gigante
                     if (w > 800 || h > 800) {
                         const factor = Math.min(800 / w, 800 / h)
                         w = Math.round(w * factor)
                         h = Math.round(h * factor)
                     }
-                    model.ancho = w
-                    model.alto = h
+                    modeloElementos.setProperty(elemento.index, "ancho", w)
+                    modeloElementos.setProperty(elemento.index, "alto", h)
                 }
             }
         }
@@ -81,8 +91,8 @@ Item {
             if (pressed && (mouse.buttons & Qt.LeftButton)) {
                 const dx = (mouse.x - elemento.arrastreInicioX) / tablero.mundoZoom
                 const dy = (mouse.y - elemento.arrastreInicioY) / tablero.mundoZoom
-                model.posX += dx
-                model.posY += dy
+                modeloElementos.setProperty(elemento.index, "posX", elemento.posX + dx)
+                modeloElementos.setProperty(elemento.index, "posY", elemento.posY + dy)
             }
         }
 
@@ -121,15 +131,15 @@ Item {
 
             onPressed: function(mouse) {
                 inicioX = mouse.x
-                inicioEscala = model.escala
+                inicioEscala = elemento.escala
             }
 
             onPositionChanged: function(mouse) {
                 if (pressed) {
                     const dx = (mouse.x - inicioX) / tablero.mundoZoom
-                    const nuevoAncho = (model.ancho * inicioEscala) + dx
-                    const factor = Math.max(0.1, Math.min(10.0, nuevoAncho / model.ancho))
-                    model.escala = factor
+                    const nuevoAncho = (elemento.ancho * inicioEscala) + dx
+                    const factor = Math.max(0.1, Math.min(10.0, nuevoAncho / elemento.ancho))
+                    modeloElementos.setProperty(elemento.index, "escala", factor)
                 }
             }
         }
@@ -167,7 +177,7 @@ Item {
             preventStealing: true
 
             onClicked: {
-                model.giro = (model.giro + 90) % 360
+                modeloElementos.setProperty(elemento.index, "giro", (elemento.giro + 90) % 360)
             }
         }
     }

@@ -141,9 +141,8 @@ Window {
                 filaMaxH = 0
             }
 
-            const modelItem = modeloElementos.get(it.index)
-            modelItem.posX = filaX
-            modelItem.posY = filaY
+            modeloElementos.setProperty(it.index, "posX", filaX)
+            modeloElementos.setProperty(it.index, "posY", filaY)
 
             filaX += it.w + gap
             filaMaxH = Math.max(filaMaxH, it.h)
@@ -156,8 +155,8 @@ Window {
         const dy = maxY / 2
         for (let i = 0; i < n; i++) {
             const m = modeloElementos.get(i)
-            m.posX -= dx
-            m.posY -= dy
+            modeloElementos.setProperty(i, "posX", m.posX - dx)
+            modeloElementos.setProperty(i, "posY", m.posY - dy)
         }
 
         centrarTodo()
@@ -179,10 +178,14 @@ Window {
         }
 
         let fuente = ""
-        if (idElem && idElem.length > 0) {
-            fuente = "image://grim/previa/" + idElem
-        } else if (ruta && ruta.length > 0) {
-            fuente = nucleo.imagenDeRuta(ruta)
+        if (ruta && ruta.length > 0) {
+            if (ruta.startsWith("file:///") || ruta.startsWith("http://") || ruta.startsWith("https://")) {
+                fuente = ruta
+            } else {
+                fuente = "file:///" + ruta.replace(/\\/g, "/")
+            }
+        } else if (idElem && idElem.length > 0) {
+            fuente = "image://grim/" + idElem
         }
 
         modeloElementos.append({
@@ -314,13 +317,19 @@ Window {
             if (drop.hasUrls) {
                 for (let i = 0; i < drop.urls.length; i++) {
                     const u = String(drop.urls[i])
-                    const localPath = u.startsWith("file:///") ? decodeURIComponent(u.substring(8)) : u
+                    let localPath = u
+                    if (localPath.startsWith("file:///")) {
+                        localPath = decodeURIComponent(localPath.substring(8))
+                    } else if (localPath.startsWith("file://")) {
+                        localPath = decodeURIComponent(localPath.substring(7))
+                    }
                     const nombre = localPath.split("/").pop().split("\\").pop()
                     const wx = (drop.x - mundoX) / mundoZoom
                     const wy = (drop.y - mundoY) / mundoZoom
                     agregarElemento("", localPath, nombre, wx, wy)
                 }
                 drop.acceptProposedAction()
+                tablero.centrarTodo()
             }
         }
     }
@@ -384,10 +393,7 @@ Window {
 
         Repeater {
             model: modeloElementos
-            delegate: ElementoTablero {
-                index: model.index
-                model: model
-            }
+            delegate: ElementoTablero {}
         }
     }
 
@@ -479,7 +485,7 @@ Window {
         enabled: tablero.indiceSeleccionado >= 0
         onActivated: {
             const it = modeloElementos.get(tablero.indiceSeleccionado)
-            it.giro = (it.giro + 90) % 360
+            modeloElementos.setProperty(tablero.indiceSeleccionado, "giro", (it.giro + 90) % 360)
         }
     }
 
@@ -488,7 +494,7 @@ Window {
         enabled: tablero.indiceSeleccionado >= 0
         onActivated: {
             const it = modeloElementos.get(tablero.indiceSeleccionado)
-            it.giro = (it.giro + 270) % 360
+            modeloElementos.setProperty(tablero.indiceSeleccionado, "giro", (it.giro + 270) % 360)
         }
     }
 
@@ -497,7 +503,7 @@ Window {
         enabled: tablero.indiceSeleccionado >= 0
         onActivated: {
             const it = modeloElementos.get(tablero.indiceSeleccionado)
-            it.espejoH = !it.espejoH
+            modeloElementos.setProperty(tablero.indiceSeleccionado, "espejoH", !it.espejoH)
         }
     }
 
