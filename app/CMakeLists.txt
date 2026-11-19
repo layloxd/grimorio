@@ -188,6 +188,7 @@ qt_add_resources(grimorio "interfaz"
         qml/ElementoTablero.qml
         qml/BarraTablero.qml
         qml/Tablero.qml
+        qml/ComparadorDuplicados.qml
 )
 
 # Los temas que vienen dentro, para elegirlos en los ajustes sin saber dónde
