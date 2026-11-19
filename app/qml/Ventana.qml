@@ -1821,9 +1821,11 @@ Window {
         for (let i = 0; i < elegidos.length; i++) {
             const k = elegidos[i]
             const u = modelo.urlDe(k)
+            const p = modelo.previaDe(k)
             lista.push({
                 id: modelo.idDe(k),
                 ruta: u ? u.toString() : "",
+                previa: p ? p : "",
                 nombre: modelo.nombreDe(k)
             })
         }

@@ -36,6 +36,14 @@ Item {
         id: contenedor
         anchors.fill: parent
 
+        // Fondo sutil para que no quede invisible mientras carga o si es documento
+        Rectangle {
+            anchors.fill: parent
+            color: tema.panel
+            opacity: 0.3
+            radius: tema.radio
+        }
+
         Image {
             id: imagen
             anchors.fill: parent
@@ -47,7 +55,24 @@ Item {
             mipmap: true
 
             onStatusChanged: {
-                if (status === Image.Ready && (elemento.ancho <= 0 || elemento.alto <= 0 || elemento.ancho === 400)) {
+                if (status === Image.Error) {
+                    // Fallback en cascada si la fuente directa falló (p. ej. vídeo, RAW o documento)
+                    if (elemento.idElemento && elemento.idElemento.length > 0) {
+                        const previaUrl = "image://grim/previa/" + elemento.idElemento
+                        const thumbUrl = "image://grim/" + elemento.idElemento
+                        if (source !== previaUrl && source !== thumbUrl) {
+                            source = previaUrl
+                        } else if (source === previaUrl) {
+                            source = thumbUrl
+                        }
+                    } else if (elemento.ruta && elemento.ruta.length > 0) {
+                        const archivoUrl = nucleo.imagenDeRuta(elemento.ruta)
+                        if (source !== archivoUrl) {
+                            source = archivoUrl
+                        }
+                    }
+                }
+                if (status === Image.Ready) {
                     let w = implicitWidth > 0 ? implicitWidth : 400
                     let h = implicitHeight > 0 ? implicitHeight : 300
                     if (w > 800 || h > 800) {
@@ -55,9 +80,37 @@ Item {
                         w = Math.round(w * factor)
                         h = Math.round(h * factor)
                     }
-                    modeloElementos.setProperty(elemento.index, "ancho", w)
-                    modeloElementos.setProperty(elemento.index, "alto", h)
+                    if (elemento.ancho !== w || elemento.alto !== h) {
+                        modeloElementos.setProperty(elemento.index, "ancho", w)
+                        modeloElementos.setProperty(elemento.index, "alto", h)
+                    }
                 }
+            }
+        }
+
+        // Icono y rótulo de archivo en caso de que no tenga imagen visual
+        Column {
+            anchors.centerIn: parent
+            spacing: Math.round(tema.hueco * 0.4)
+            visible: imagen.status === Image.Error
+            width: Math.max(30, parent.width - 20)
+
+            Icono {
+                anchors.horizontalCenter: parent.horizontalCenter
+                nombre: "documento"
+                color: tema.textoTenue
+                width: Math.round(tema.fuente * 2.2)
+                height: width
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                text: elemento.nombre
+                color: tema.textoTenue
+                font.pixelSize: Math.round(tema.fuente * 0.75)
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideMiddle
             }
         }
 

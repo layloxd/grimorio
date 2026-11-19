@@ -167,7 +167,7 @@ Window {
         indiceSeleccionado = idx
     }
 
-    function agregarElemento(idElem, ruta, nombre, px, py) {
+    function agregarElemento(idElem, ruta, previa, nombre, px, py) {
         let posX = px !== undefined ? px : ((-mundoX + width / 2) / mundoZoom)
         let posY = py !== undefined ? py : ((-mundoY + height / 2) / mundoZoom)
 
@@ -178,14 +178,16 @@ Window {
         }
 
         let fuente = ""
-        if (ruta && ruta.length > 0) {
+        if (previa && previa.length > 0) {
+            fuente = previa.startsWith("file:///") ? previa : ("file:///" + previa.replace(/\\/g, "/"))
+        } else if (idElem && idElem.length > 0) {
+            fuente = "image://grim/previa/" + idElem
+        } else if (ruta && ruta.length > 0) {
             if (ruta.startsWith("file:///") || ruta.startsWith("http://") || ruta.startsWith("https://")) {
                 fuente = ruta
             } else {
                 fuente = "file:///" + ruta.replace(/\\/g, "/")
             }
-        } else if (idElem && idElem.length > 0) {
-            fuente = "image://grim/" + idElem
         }
 
         modeloElementos.append({
@@ -210,7 +212,7 @@ Window {
         if (!lista || lista.length === 0) return
         for (let i = 0; i < lista.length; i++) {
             const it = lista[i]
-            agregarElemento(it.id, it.ruta, it.nombre)
+            agregarElemento(it.id, it.ruta, it.previa, it.nombre)
         }
         autoEmpaquetar()
     }
@@ -326,7 +328,7 @@ Window {
                     const nombre = localPath.split("/").pop().split("\\").pop()
                     const wx = (drop.x - mundoX) / mundoZoom
                     const wy = (drop.y - mundoY) / mundoZoom
-                    agregarElemento("", localPath, nombre, wx, wy)
+                    agregarElemento("", localPath, "", nombre, wx, wy)
                 }
                 drop.acceptProposedAction()
                 tablero.centrarTodo()
