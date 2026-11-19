@@ -796,3 +796,16 @@ bool Nucleo::conmutarFuente(const QString &ruta)
         return activarFuente(ruta);
     }
 }
+
+QString Nucleo::leerTexto(const QString &rutaOUrl, int maxBytes)
+{
+    QString ruta = rutaOUrl;
+    if (ruta.startsWith(QLatin1String("file:///"))) {
+        ruta = QUrl(rutaOUrl).toLocalFile();
+    }
+    if (ruta.isEmpty()) return QString();
+    QFile f(ruta);
+    if (!f.open(QIODevice::ReadOnly)) return QString();
+    const QByteArray bytes = f.read(maxBytes);
+    return QString::fromUtf8(bytes);
+}

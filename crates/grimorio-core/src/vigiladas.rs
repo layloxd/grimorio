@@ -198,7 +198,7 @@ mod tests {
         let lib = tempfile::tempdir().unwrap();
         let disco = tempfile::tempdir().unwrap();
         std::fs::write(disco.path().join("a.png"), b"x").unwrap();
-        std::fs::write(disco.path().join("notas.txt"), b"x").unwrap();
+        std::fs::write(disco.path().join("notas.bin"), b"x").unwrap();
         std::fs::write(disco.path().join(".oculto.png"), b"x").unwrap();
         std::fs::create_dir(disco.path().join("sub")).unwrap();
         std::fs::write(disco.path().join("sub/b.jpg"), b"x").unwrap();
@@ -211,7 +211,7 @@ mod tests {
             .map(|(p, _)| p.file_name().unwrap().to_string_lossy().into_owned())
             .collect();
         n.sort();
-        assert_eq!(n, vec!["a.png", "b.jpg"], "ni el txt ni el oculto");
+        assert_eq!(n, vec!["a.png", "b.jpg"], "ni el bin ni el oculto");
 
         marcar(lib.path(), &id, crate::time::now_ms() + 1000).unwrap();
         let v = cargar(lib.path()).unwrap().remove(0);

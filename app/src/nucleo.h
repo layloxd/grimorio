@@ -229,6 +229,9 @@ public:
     Q_INVOKABLE bool estaFuenteActiva(const QString &ruta) const;
     Q_INVOKABLE bool conmutarFuente(const QString &ruta);
 
+    /// Lee el contenido textual de un archivo (Markdown, TXT, LOG, JSON, etc.) hasta maxBytes.
+    Q_INVOKABLE QString leerTexto(const QString &rutaOUrl, int maxBytes = 1000000);
+
 signals:
     void fuenteEstadoCambio(const QString &ruta, bool activa);
     void listo();

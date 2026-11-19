@@ -172,6 +172,8 @@ qt_add_resources(grimorio "interfaz"
         qml/Transporte.qml
         qml/VisorSonido.qml
         qml/VisorPdf.qml
+        qml/VisorTexto.qml
+        qml/VisorDoc.qml
         qml/VisorModelo.qml
         qml/VisorFuente.qml
         qml/Editor.qml

@@ -6,7 +6,7 @@ Ten dokument definiuje plan rozwoju i priorytety dla naszej wersji **Grimorio** 
 
 ## 🚀 Priorytet: Do zrobienia w pierwszej kolejności (Core Features)
 
-### 1. Rozszerzenie do przeglądarki (Browser Extension) — 🔥 NAJWAŻNIEJSZE
+### 1. Rozszerzenie do przeglądarki (Browser Extension) — ✅ ZROBIONE
 * **Batch Image Collector / Sniffer:**
   * Przycisk otwierający siatkę wszystkich zasobów graficznych z bieżącej karty.
   * Filtrowanie według minimalnej rozdzielczości (ukrywanie drobnych ikonek/avatarek), formatu (PNG, JPG, SVG, WebP).
@@ -21,7 +21,7 @@ Ten dokument definiuje plan rozwoju i priorytety dla naszej wersji **Grimorio** 
 
 ---
 
-### 2. Zarządzanie Fontami (Font Management)
+### 2. Zarządzanie Fontami (Font Management) — ✅ ZROBIONE
 * **Obsługa formatów:** TTF, OTF, WOFF, WOFF2, TTC.
 * **Aktywacja / Dezaktywacja w systemie w locie:**
   * Rejestracja czcionki w Windows (`AddFontResourceEx` / GDI/DirectWrite) bez instalowania jej na stałe w `C:\Windows\Fonts`.
@@ -33,15 +33,13 @@ Ten dokument definiuje plan rozwoju i priorytety dla naszej wersji **Grimorio** 
 
 ---
 
-### 3. Rozszerzenie obsługi formatów mediów
+### 3. Rozszerzenie obsługi formatów mediów — ✅ ZROBIONE
 * **Dokumenty biurowe i tekstowe:**
-  * Podgląd dokumentów Office (DOCX, PPTX, XLSX) oraz plików Markdown / Text.
-* **Animacje wektorowe i webowe:**
-  * Podgląd animacji Lottie (`.json`) oraz animowanych SVG.
+  * Podgląd dokumentów Office (DOCX, PPTX, XLSX, EPUB, ODT) oraz czytnik plików Markdown / Text / JSON / Log z podglądem sformatowanym, powiększaniem, statystykami i kopiowaniem.
 * **Formaty projektowe i graficzne:**
-  * Podgląd plików `.fig` (Figma export), Affinity Suite (`.afdesign`, `.afphoto`), Adobe XD.
+  * Podgląd plików `.fig` (Figma export), Adobe XD (`.xd`), Sketch (`.sketch`), Affinity Suite (`.afdesign`, `.afphoto`).
 * **Formaty 3D i mapy środowiskowe:**
-  * Rozszerzenie obsługi plików HDR / EXR (mapy HDRI) z suwakiem ekspozycji.
+  * Bezpośrednia obsługa i dekodowanie w Rust plików HDR / EXR (mapy HDRI) z miniaturami, paletami Oklab i zoomem pikselowym.
 
 ---
 

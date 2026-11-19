@@ -49,6 +49,8 @@ var trazos = {
     "repetidos":   "M8.5 8.5 H20 V20 H8.5 Z M4 15.5 V4 H15.5",
     "cerrar":      "M6 6 L18 18 M18 6 L6 18",
     "fuente":      "M5 19 L12 4 L19 19 M7.5 14 H16.5",
+    "documento":   "M6 3 H14 L18 7 V21 H6 Z M14 3 V7 H18 M9 12 H15 M9 15 H15 M9 18 H13",
+    "texto":       "M4 5 H20 M12 5 V19 M8 19 H16",
     "lapiz":       "M4 20 H8 L19.5 8.5 L15.5 4.5 L4 16 Z M13.5 6.5 L17.5 10.5",
     "vigilar":     "M12 4 A8 8 0 1 0 12 20 A8 8 0 1 0 12 4",
     "todo":        "M4 4 H20 V20 H4 Z M4 9.3 H20 M4 14.7 H20 M9.3 4 V20 M14.7 4 V20",

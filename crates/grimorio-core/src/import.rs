@@ -888,7 +888,7 @@ mod tests_mezcla {
         std::fs::write(fuente.join("manual.pdf"), b"%PDF-1.4 mentira").unwrap();
         std::fs::write(fuente.join("Rotulo.otf"), b"OTTO...").unwrap();
         std::fs::write(fuente.join("compilado.o"), b"\x7fELF").unwrap();
-        std::fs::write(fuente.join("notas.log"), b"nada que ver").unwrap();
+        std::fs::write(fuente.join("notas.tmp"), b"nada que ver").unwrap();
 
         let raiz = dir.path().join("p.grimorio");
         let mut lib = Library::create(&raiz, "p").unwrap();
@@ -905,7 +905,7 @@ mod tests_mezcla {
             "la imagen, el vídeo, el PDF y la fuente"
         );
         assert_eq!(informe.sin_miniatura, 3, "todos menos la imagen");
-        assert_eq!(informe.unsupported, 2, "el .o y el .log se quedan fuera");
+        assert_eq!(informe.unsupported, 2, "el .o y el .tmp se quedan fuera");
         assert!(informe.failed.is_empty());
 
         let todos = Query {

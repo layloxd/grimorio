@@ -63,7 +63,7 @@ impl Familia {
             "raw" | "negativo" => Some(Familia::Raw),
             "video" | "vídeo" | "peli" | "clip" => Some(Familia::Video),
             "audio" | "sonido" | "música" | "musica" => Some(Familia::Audio),
-            "documento" | "document" | "doc" | "pdf" => Some(Familia::Documento),
+            "documento" | "document" | "doc" | "pdf" | "texto" | "text" => Some(Familia::Documento),
             "tipografia" | "tipografía" | "fuente" | "font" => Some(Familia::Tipografia),
             "modelo" | "model" | "3d" | "malla" | "pieza" => Some(Familia::Modelo),
             _ => None,
@@ -82,9 +82,10 @@ const TABLA: &[(Familia, &[&str])] = &[
         Familia::Imagen,
         &[
             "jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "ico", "tga", "avif", "svg",
+            "hdr", "exr",
             // Los de diseño entran como imágenes: lo que se mira de ellos es
             // cómo quedan. La imagen la saca diseno.rs con su herramienta.
-            "psd", "psb", "xcf", "kra", "ora", "sketch", "ai", "eps",
+            "psd", "psb", "xcf", "kra", "ora", "sketch", "ai", "eps", "fig", "xd", "afdesign", "afphoto",
         ],
     ),
     (
@@ -105,7 +106,12 @@ const TABLA: &[(Familia, &[&str])] = &[
             "mp3", "flac", "wav", "ogg", "oga", "m4a", "aac", "opus", "aiff", "wma",
         ],
     ),
-    (Familia::Documento, &["pdf"]),
+    (
+        Familia::Documento,
+        &[
+            "pdf", "docx", "pptx", "xlsx", "epub", "odt", "odp", "ods", "md", "markdown", "txt", "rtf", "log", "json",
+        ],
+    ),
     (Familia::Tipografia, &["ttf", "otf", "ttc", "woff", "woff2"]),
     (
         Familia::Modelo,
@@ -261,7 +267,15 @@ pub fn abrir(ruta: &Path, ext: &str, bytes: &[u8]) -> Result<Lienzo> {
         }
         Some(Familia::Video) => Ok(de_video(ruta)),
         Some(Familia::Audio) => Ok(de_audio(ruta, bytes)),
-        Some(Familia::Documento) => Ok(de_pdf(ruta)),
+        Some(Familia::Documento) => {
+            let e = ext.trim_start_matches('.').to_ascii_lowercase();
+            if e == "pdf" {
+                Ok(de_pdf(ruta))
+            } else {
+                let img = crate::diseno::previa_documento(ruta, &e);
+                Ok(Lienzo::de_imagen(img))
+            }
+        }
         Some(Familia::Modelo) => Ok(de_modelo(ruta, ext, bytes)),
         Some(Familia::Raw) => match crate::raw::previa(bytes) {
             // Las medidas son las de la vista previa, no las del negativo: son
@@ -591,10 +605,20 @@ mod tests {
     fn cada_extension_cae_en_su_familia() {
         assert_eq!(familia_de("JPG"), Some(Familia::Imagen));
         assert_eq!(familia_de(".png"), Some(Familia::Imagen));
+        assert_eq!(familia_de("hdr"), Some(Familia::Imagen));
+        assert_eq!(familia_de("exr"), Some(Familia::Imagen));
+        assert_eq!(familia_de("fig"), Some(Familia::Imagen));
+        assert_eq!(familia_de("xd"), Some(Familia::Imagen));
         assert_eq!(familia_de("cr2"), Some(Familia::Raw));
         assert_eq!(familia_de("mkv"), Some(Familia::Video));
         assert_eq!(familia_de("flac"), Some(Familia::Audio));
         assert_eq!(familia_de("pdf"), Some(Familia::Documento));
+        assert_eq!(familia_de("docx"), Some(Familia::Documento));
+        assert_eq!(familia_de("pptx"), Some(Familia::Documento));
+        assert_eq!(familia_de("xlsx"), Some(Familia::Documento));
+        assert_eq!(familia_de("epub"), Some(Familia::Documento));
+        assert_eq!(familia_de("md"), Some(Familia::Documento));
+        assert_eq!(familia_de("txt"), Some(Familia::Documento));
         assert_eq!(familia_de("woff2"), Some(Familia::Tipografia));
         assert_eq!(familia_de("STL"), Some(Familia::Modelo));
         assert_eq!(familia_de("blend"), Some(Familia::Modelo));
@@ -603,7 +627,8 @@ mod tests {
     #[test]
     fn lo_que_no_es_de_la_casa_no_entra() {
         assert_eq!(familia_de("o"), None);
-        assert_eq!(familia_de("log"), None);
+        assert_eq!(familia_de("exe"), None);
+        assert_eq!(familia_de("DS_Store"), None);
         assert_eq!(familia_de(""), None);
         assert!(!se_puede_guardar("DS_Store"));
     }

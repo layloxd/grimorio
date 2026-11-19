@@ -42,6 +42,11 @@ Item {
     readonly property bool esFuente: familiaFoco === Textos.TIPOGRAFIA
     readonly property bool conVisorPropio: esDocumento || esModelo || esFuente
 
+    readonly property string extFoco: foco >= 0 ? modelo.extDe(foco).toLowerCase() : ""
+    readonly property bool esPdf: esDocumento && extFoco === "pdf"
+    readonly property bool esTexto: esDocumento && (extFoco === "md" || extFoco === "markdown" || extFoco === "txt" || extFoco === "log" || extFoco === "json" || extFoco === "rtf")
+    readonly property bool esOfficeDoc: esDocumento && !esPdf && !esTexto
+
     /// La pila del elemento en foco, de la versión más pesada a la más ligera,
     /// con la principal marcada. Vacía si no es de ninguna. Sale de la ficha:
     /// la vista solo dice cuántas hay, no cuáles.
@@ -368,7 +373,9 @@ Item {
         anchors.fill: lienzo
         z: 1
         active: visor.visible && visor.conVisorPropio && visor.idFoco.length > 0
-        source: visor.esDocumento ? "qrc:/qml/VisorPdf.qml"
+        source: visor.esPdf ? "qrc:/qml/VisorPdf.qml"
+              : visor.esTexto ? "qrc:/qml/VisorTexto.qml"
+              : visor.esOfficeDoc ? "qrc:/qml/VisorDoc.qml"
               : visor.esFuente ? "qrc:/qml/VisorFuente.qml"
               : "qrc:/qml/VisorModelo.qml"
         readonly property bool listo: status === Loader.Ready && active
@@ -388,7 +395,7 @@ Item {
         if (!v || !visor.conVisorPropio || visor.foco < 0) return
         // La url antes que el id: es el id el que dispara la petición.
         v.original = modelo.urlDe(visor.foco)
-        if (visor.esModelo) v.ext = modelo.extDe(visor.foco).toLowerCase()
+        v.ext = modelo.extDe(visor.foco).toLowerCase()
         v.idElemento = visor.idFoco
     }
 

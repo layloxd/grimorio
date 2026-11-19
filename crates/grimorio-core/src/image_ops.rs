@@ -9,7 +9,7 @@ use crate::item::PaletteEntry;
 use image::{DynamicImage, GenericImageView, RgbImage};
 
 /// Extensiones que el núcleo sabe decodificar hoy, en Rust puro.
-pub const SUPPORTED: &[&str] = &["jpg", "jpeg", "png", "gif", "webp", "bmp"];
+pub const SUPPORTED: &[&str] = &["jpg", "jpeg", "png", "gif", "webp", "bmp", "hdr", "exr"];
 
 pub fn is_supported(ext: &str) -> bool {
     let e = ext.to_ascii_lowercase();

@@ -21,7 +21,9 @@ use std::path::Path;
 use std::time::Duration;
 
 /// Las extensiones de diseño que entran como imágenes.
-pub const EXTENSIONES: &[&str] = &["psd", "psb", "xcf", "kra", "ora", "sketch", "ai", "eps"];
+pub const EXTENSIONES: &[&str] = &[
+    "psd", "psb", "xcf", "kra", "ora", "sketch", "ai", "eps", "fig", "xd", "afdesign", "afphoto",
+];
 
 /// El lado mayor de lo que sale. Lo bastante para la previsualización de
 /// 1024 px y para acercarse un poco en el visor.
@@ -208,6 +210,9 @@ pub fn previa(ruta: &Path, ext: &str) -> Result<DynamicImage, String> {
         }
         "kra" | "ora" => de_zip(ruta, &["mergedimage.png", "Thumbnails/thumbnail.png", "preview.png"]),
         "sketch" => de_zip(ruta, &["previews/preview.png"]),
+        "fig" => de_zip(ruta, &["thumbnail.png", "preview.png", "canvas.png"]),
+        "xd" => de_zip(ruta, &["previews/preview.png", "preview.png"]),
+        "afdesign" | "afphoto" => de_zip(ruta, &["preview.png", "Thumbnails/thumbnail.png"]),
         _ if ingles() => Err(format!("can't draw .{ext} yet")),
         _ => Err(format!("todavía no sé dibujar .{ext}")),
     }
@@ -294,6 +299,220 @@ fn frases_muestra(en: bool) -> (&'static str, &'static str) {
     } else {
         ("El veloz murciélago hindú", "comía feliz cardillo y kiwi.")
     }
+}
+
+// ------------------------------------------------ Tarjetas para documentos
+
+fn char_5x7(c: char) -> [u8; 5] {
+    match c.to_ascii_uppercase() {
+        'A' => [0x7E, 0x11, 0x11, 0x11, 0x7E],
+        'B' => [0x7F, 0x49, 0x49, 0x49, 0x36],
+        'C' => [0x3E, 0x41, 0x41, 0x41, 0x22],
+        'D' => [0x7F, 0x41, 0x41, 0x22, 0x1C],
+        'E' => [0x7F, 0x49, 0x49, 0x49, 0x41],
+        'F' => [0x7F, 0x09, 0x09, 0x09, 0x01],
+        'G' => [0x3E, 0x41, 0x49, 0x49, 0x7A],
+        'H' => [0x7F, 0x08, 0x08, 0x08, 0x7F],
+        'I' => [0x00, 0x41, 0x7F, 0x41, 0x00],
+        'J' => [0x20, 0x40, 0x41, 0x3F, 0x01],
+        'K' => [0x7F, 0x08, 0x14, 0x22, 0x41],
+        'L' => [0x7F, 0x40, 0x40, 0x40, 0x40],
+        'M' => [0x7F, 0x02, 0x04, 0x02, 0x7F],
+        'N' => [0x7F, 0x04, 0x08, 0x10, 0x7F],
+        'O' => [0x3E, 0x41, 0x41, 0x41, 0x3E],
+        'P' => [0x7F, 0x09, 0x09, 0x09, 0x06],
+        'Q' => [0x3E, 0x41, 0x51, 0x21, 0x5E],
+        'R' => [0x7F, 0x09, 0x19, 0x29, 0x46],
+        'S' => [0x46, 0x49, 0x49, 0x49, 0x31],
+        'T' => [0x01, 0x01, 0x7F, 0x01, 0x01],
+        'U' => [0x3F, 0x40, 0x40, 0x40, 0x3F],
+        'V' => [0x1F, 0x20, 0x40, 0x20, 0x1F],
+        'W' => [0x7F, 0x20, 0x18, 0x20, 0x7F],
+        'X' => [0x63, 0x14, 0x08, 0x14, 0x63],
+        'Y' => [0x07, 0x08, 0x70, 0x08, 0x07],
+        'Z' => [0x61, 0x51, 0x49, 0x45, 0x43],
+        '0' => [0x3E, 0x51, 0x49, 0x45, 0x3E],
+        '1' => [0x00, 0x42, 0x7F, 0x40, 0x00],
+        '2' => [0x42, 0x61, 0x51, 0x49, 0x46],
+        '3' => [0x21, 0x41, 0x45, 0x4B, 0x31],
+        '4' => [0x18, 0x14, 0x12, 0x7F, 0x10],
+        '5' => [0x27, 0x45, 0x45, 0x45, 0x39],
+        '6' => [0x3C, 0x4A, 0x49, 0x49, 0x30],
+        '7' => [0x01, 0x71, 0x09, 0x05, 0x03],
+        '8' => [0x36, 0x49, 0x49, 0x49, 0x36],
+        '9' => [0x06, 0x49, 0x49, 0x29, 0x1E],
+        '-' => [0x08, 0x08, 0x08, 0x08, 0x08],
+        '_' => [0x40, 0x40, 0x40, 0x40, 0x40],
+        '.' => [0x00, 0x60, 0x60, 0x00, 0x00],
+        _ => [0x00, 0x00, 0x00, 0x00, 0x00],
+    }
+}
+
+fn rellenar_rect(img: &mut image::RgbImage, x0: u32, y0: u32, w: u32, h: u32, color: [u8; 3]) {
+    let x_fin = (x0 + w).min(img.width());
+    let y_fin = (y0 + h).min(img.height());
+    let px = image::Rgb(color);
+    for y in y0..y_fin {
+        for x in x0..x_fin {
+            img.put_pixel(x, y, px);
+        }
+    }
+}
+
+fn dibujar_texto(img: &mut image::RgbImage, texto: &str, x0: u32, y0: u32, escala: u32, color: [u8; 3]) {
+    let px = image::Rgb(color);
+    let mut x_cursor = x0;
+    for c in texto.chars() {
+        let cols = char_5x7(c);
+        for (col_idx, &bits) in cols.iter().enumerate() {
+            for row in 0..7 {
+                if (bits & (1 << row)) != 0 {
+                    let rx = x_cursor + (col_idx as u32) * escala;
+                    let ry = y0 + (row as u32) * escala;
+                    for dy in 0..escala {
+                        for dx in 0..escala {
+                            let px_x = rx + dx;
+                            let px_y = ry + dy;
+                            if px_x < img.width() && px_y < img.height() {
+                                img.put_pixel(px_x, px_y, px);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        x_cursor += 6 * escala;
+    }
+}
+
+/// Dibuja una tarjeta nítida de documento en una imagen de 1024x1024 en Rust puro.
+pub fn dibujar_tarjeta_documento(ruta: &Path, ext: &str) -> image::RgbImage {
+    let mut img = image::RgbImage::new(1024, 1024);
+
+    // Fondo gris oscuro del lienzo
+    rellenar_rect(&mut img, 0, 0, 1024, 1024, [22, 22, 26]);
+
+    // Hoja de papel (sombra y hoja)
+    rellenar_rect(&mut img, 168, 128, 696, 776, [12, 12, 15]);
+    rellenar_rect(&mut img, 160, 120, 704, 784, [248, 250, 252]);
+
+    // Color del encabezado según extensión
+    let color_cabecera: [u8; 3] = match ext {
+        "docx" | "doc" => [24, 90, 189],
+        "pptx" | "ppt" => [210, 71, 38],
+        "xlsx" | "xls" => [16, 124, 65],
+        "epub" => [224, 109, 32],
+        "md" | "markdown" => [105, 65, 198],
+        "txt" | "log" => [71, 85, 105],
+        "rtf" => [37, 99, 235],
+        "json" => [217, 119, 6],
+        "odt" | "ods" | "odp" => [13, 148, 136],
+        _ => [100, 116, 139],
+    };
+
+    // Encabezado coloreado
+    rellenar_rect(&mut img, 160, 120, 704, 220, color_cabecera);
+
+    // Insignia grande centrada en el encabezado
+    let etiqueta = ext.to_ascii_uppercase();
+    let chars_n = etiqueta.chars().count() as u32;
+    let escala_insignia = 14;
+    let ancho_insignia = chars_n * 6 * escala_insignia;
+    let x_insignia = 160 + (704u32.saturating_sub(ancho_insignia)) / 2;
+    let y_insignia = 120 + (220u32.saturating_sub(7 * escala_insignia)) / 2;
+    dibujar_texto(&mut img, &etiqueta, x_insignia, y_insignia, escala_insignia, [255, 255, 255]);
+
+    // Título del documento
+    let stem = ruta.file_stem().and_then(|s| s.to_str()).unwrap_or("Document");
+    let titulo_recortado: String = stem.chars().take(22).collect();
+    dibujar_texto(&mut img, &titulo_recortado, 204, 390, 4, [30, 41, 59]);
+
+    // Línea divisoria
+    rellenar_rect(&mut img, 204, 440, 616, 3, [226, 232, 240]);
+
+    // Párrafos simulados (barras esqueléticas elegantes)
+    let lineas: &[(u32, u32, u32)] = &[
+        (204, 480, 600),
+        (204, 515, 560),
+        (204, 550, 590),
+        (204, 585, 410),
+        (204, 640, 610),
+        (204, 675, 540),
+        (204, 710, 360),
+        (204, 765, 590),
+        (204, 800, 460),
+        (204, 835, 520),
+    ];
+    for &(lx, ly, lw) in lineas {
+        rellenar_rect(&mut img, lx, ly, lw, 14, [203, 213, 225]);
+    }
+
+    img
+}
+
+/// Saca la imagen de portada o previsualización de un documento (Office, EPUB, texto).
+pub fn previa_documento(ruta: &Path, ext: &str) -> DynamicImage {
+    let ext_lower = ext.to_ascii_lowercase();
+    match ext_lower.as_str() {
+        "docx" => {
+            if let Ok(img) = de_zip(
+                ruta,
+                &[
+                    "docProps/thumbnail.jpeg",
+                    "docProps/thumbnail.png",
+                    "word/media/image1.jpeg",
+                    "word/media/image1.png",
+                ],
+            ) {
+                return img;
+            }
+        }
+        "pptx" => {
+            if let Ok(img) = de_zip(
+                ruta,
+                &[
+                    "docProps/thumbnail.jpeg",
+                    "docProps/thumbnail.png",
+                    "ppt/media/image1.jpeg",
+                    "ppt/media/image1.png",
+                ],
+            ) {
+                return img;
+            }
+        }
+        "xlsx" => {
+            if let Ok(img) = de_zip(ruta, &["docProps/thumbnail.jpeg", "docProps/thumbnail.png"]) {
+                return img;
+            }
+        }
+        "epub" => {
+            if let Ok(img) = de_zip(
+                ruta,
+                &[
+                    "cover.jpeg",
+                    "cover.jpg",
+                    "cover.png",
+                    "OEBPS/cover.jpg",
+                    "OEBPS/cover.jpeg",
+                    "OEBPS/images/cover.jpg",
+                    "OEBPS/images/cover.jpeg",
+                    "EPUB/cover.jpg",
+                    "EPUB/cover.jpeg",
+                    "images/cover.jpg",
+                ],
+            ) {
+                return img;
+            }
+        }
+        "odt" | "odp" | "ods" => {
+            if let Ok(img) = de_zip(ruta, &["Thumbnails/thumbnail.png"]) {
+                return img;
+            }
+        }
+        _ => {}
+    }
+
+    DynamicImage::ImageRgb8(dibujar_tarjeta_documento(ruta, &ext_lower))
 }
 
 #[cfg(test)]

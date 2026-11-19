@@ -71,5 +71,32 @@ Lista kontrolna funkcjonalności do ręcznego przetestowania w wolnej chwili prz
 
 ---
 
-## 3. 📦 Nowe Formaty Mediów (W planach)
-- [ ] *[Do uzupełnienia po dodaniu obsługi formatów biurowych i wektorowych]*
+## 3. 📦 Rozszerzona Obsługa Formatów Mediów (Media Formats Expansion)
+
+### 📄 Test 1: Pliki Markdown i Tekstowe (.md, .txt, .json, .log)
+- [ ] Przygotuj lub przeciągnij plik `.md` (Markdown), `.txt` lub `.json` do Grimorio.
+- [ ] Sprawdź, czy w siatce pojawiła się wygenerowana karta dokumentu z odpowiednią kolorową odznaką (`MD` fioletowa, `TXT` grafitowa, `JSON` złota) i tytułem dokumentu.
+- [ ] Otwórz plik klawiszem `Enter` lub dwuklikiem:
+  - [ ] **Dla plików `.md`:** Sprawdź czy tekst wyświetla się w trybie sformatowanym (nagłówki `#`, pogrubienia `**`, listy, linki).
+  - [ ] Kliknij przycisk **"ver código fuente"** / **"ver renderizado"**, aby przełączać między podglądem sformatowanym a surowym kodem.
+  - [ ] Sprawdź przyciski powiększania/pomniejszania tekstu (**`+`** / **`-`**).
+  - [ ] Sprawdź licznik linii i znaków na górnym pasku.
+  - [ ] Kliknij ikonę kopiowania — zawartość tekstu powinna trafić do schowka z powiadomieniem.
+  - [ ] Kliknij **"abrir en el editor"** — plik powinien otworzyć się w domyślnym edytorze systemowym (np. VS Code, Notepad).
+
+### 📊 Test 2: Dokumenty Biurowe i E-booki (.docx, .pptx, .xlsx, .epub, .odt)
+- [ ] Przeciągnij plik `.docx` (Word), `.pptx` (PowerPoint), `.xlsx` (Excel) lub `.epub` (książka/komiks):
+  - [ ] Jeśli plik posiada wbudowaną miniaturę (standard MS Office / LibreOffice / okładka EPUB), upewnij się, że miniatura została natychmiast wyodrębniona.
+  - [ ] Jeśli plik nie ma miniatury, sprawdź czy wygenerowała się estetyczna karta z odznaką formatu (`DOCX` niebieska, `PPTX` pomarańczowa, `XLSX` zielona, `EPUB` bursztynowa) i tytułem.
+- [ ] Otwórz plik w podglądzie (`Visor`):
+  - [ ] Sprawdź wycentrowany podgląd okładki/strony/karty w wysokiej rozdzielczości.
+  - [ ] Sprawdź pasek informacyjny z nazwą i wagą pliku.
+  - [ ] Kliknij **"abrir en programa predeterminado"** — dokument powinien natychmiast otworzyć się w powiązanym programie (Word, PowerPoint, Excel, czytnik ebooków).
+
+### 🎨 Test 3: Formaty Projektowe (.fig, .xd, .sketch, .afdesign)
+- [ ] Zaimportuj plik exportu z Figmy (`.fig`), Adobe XD (`.xd`) lub Sketch (`.sketch`).
+- [ ] Sprawdź, czy Grimorio wyciąga wbudowany podgląd z pliku ZIP i prezentuje go w siatce oraz w pełnym powiększeniu.
+
+### 🌅 Test 4: Mapy Środowiskowe HDRI / EXR (.hdr, .exr)
+- [ ] Zaimportuj grafikę HDR lub plik OpenEXR (`.hdr`, `.exr` np. darmowa mapa HDRI z Poly Haven).
+- [ ] Sprawdź czy plik ładuje się natychmiast bez żadnych błędów, generując miniaturę, obliczając paletę Oklab i pozwalając na pełnoekranowy zoom pikselowy w `VisorImagen`.
